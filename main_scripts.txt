@@ -1,0 +1,144 @@
+kubectl -n observability port-forward svc/kube-prom-stack-grafana 3000:80
+kubectl get svc --all-namespaces
+microk8s enable observability
+
+
+kubectl -n kubernetes-dashboard create token dashboard-admin
+
+
+docker run -it --rm -e TARGET_URL='http://javabench-service.default.svc.cluster.local:8080/primecheck' -e REQUEST_FREQUENCY='5' --name load-generator localhost:32000/load-generator
+
+docker run -it --rm -e TARGET_URL='http://192.168.0.102:30000/primecheck' -e REQUEST_FREQUENCY='100' localhost:32000/load-generator:latest
+http://javabench-service.default.svc.cluster.local:8080/primecheck
+kubectl describe pod load-generator-deployment-59656c66b9-5ppsv --namespace default
+
+
+
+kubectl run javabench-app2 --image=nclcloudcomputing/javabenchmarkapp --port=8080
+kubectl get pod --namespace default
+
+
+kubectl proxy --address='0.0.0.0' --accept-hosts='^*$'
+port-forward svc/kube-prom-stack-kube-prome-prometheus -n observability 9090:9090
+kubectl get svc -n observability
+
+ kubectl get pods --namespace default
+ 
+ kubectl logs javabench-app2 --namespace default
+ 
+ kubectl scale deployment load-generator-deployment-54fcc75845-svf84 --replicas=0 --namespace default
+ Yinhao Li
+ 
+ **kubectl get svc javabench-service --namespace default**
+ kubectl describe pod javabench-app --namespace default
+  kubectl delete pod load-generator-deployment-7868846bf7-644m8 --namespace default
+  
+  
+  microk8s enable observability
+  
+  edit grafana -->  kubectl -n observability edit svc kube-prom-stack-grafana
+  
+  
+  kubectl get svc --all-namespaces
+  kubectl -n observability port-forward svc/kube-prom-stack-grafana 3000:80 --> unknown
+  
+  
+  
+import requests
+import time
+import os
+import threading
+
+# Load configuration from environment variables
+target_url = os.getenv('TARGET_URL')
+request_frequency = float(os.getenv('REQUEST_FREQUENCY', '1'))  # Defaults to 1 request per second if not set
+
+# Metrics
+average_response_time = 0
+total_failures = 0
+total_requests = 0
+
+# Lock for thread-safe increments
+lock = threading.Lock()
+
+def send_request():
+    global average_response_time, total_failures, total_requests
+    try:
+        start_time = time.time()
+        response = requests.get(target_url, timeout=10)
+        passed_time = time.time() - start_time
+
+        with lock:
+            total_requests += 1
+            average_response_time = (average_response_time * (total_requests - 1) + passed_time) / total_requests
+
+        # Check if the request was unsuccessful
+        if response.status_code != 200:
+            with lock:
+                total_failures += 1
+
+    except (requests.exceptions.Timeout, requests.exceptions.RequestException):
+        with lock:
+            total_failures += 1
+
+# Function to display metrics
+def display_result():
+    while True:
+        time.sleep(10)  # Update every 10 seconds
+        with lock:
+            print(f'Average Response Time: {average_response_time:.2f}s, Accumulated Failures: {total_failures}')
+
+# Start the display metrics thread
+threading.Thread(target=display_result, daemon=True).start()
+
+# Main loop to send requests at the specified frequency
+while True:
+    threading.Thread(target=send_request).start()
+    time.sleep(1 / request_frequency)
+    
+    
+    
+    
+    
+import requests
+import time
+import os
+
+target_url = os.getenv('TARGET_URL')
+request_frequency = float(os.getenv('REQUEST_FREQUENCY', '1')) 
+
+average_response_time = 0
+total_failures = 0
+total_requests = 0
+
+def send_request():
+    global average_response_time, total_failures, total_requests
+    try:
+        start_time = time.time()
+        response = requests.get(target_url, timeout=10)
+        passed_time = time.time() - start_time
+
+        total_requests += 1
+        average_response_time = (average_response_time * (total_requests - 1) + passed_time) / total_requests
+
+        if response.status_code != 200:
+            total_failures += 1
+
+    except (requests.exceptions.Timeout, requests.exceptions.RequestException):
+        total_failures += 1
+
+def display_result():
+    print(f'Average Response Time: {average_response_time:.2f}s, Total Failures: {total_failures}')
+
+while True:
+    send_request()
+    display_result()
+    time.sleep(1 / request_frequency)
+
+
+
+
+As a conclusion, I want to state that all above explanations are made in the assumption that all required dependencies are installed or pulled properly. 
+Un-showed parts of the project are same as it stated in the official documentations and no analytical approach are done there. 
+Final results of the system are same as it intended to be. 
+The system answers all the requirements in the way that it was provided in the assessment documentation 
